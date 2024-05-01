@@ -1,16 +1,18 @@
 const express = require('express');
 const cors = require('cors');
 const app = express()
-
+require('dotenv').config()
 
 //middleware
 app.use(cors())
 app.use(express.json())
-
+const user = process.env.USER
+const password = process.env.PASS
+console.log(user,password)
 //art
 //art123
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const uri = "mongodb+srv://art:art123@cluster0.drqortc.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+const uri = `mongodb+srv://${user}:${password}@cluster0.drqortc.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
     serverApi: {
@@ -108,32 +110,8 @@ async function run() {
         //         return res.status(500).json({ error: "Internal Server Error" });
         //     }
         // });
-        app.post('/createCategory', async (req, res) => {
-            const newCategory = req.body;
-            console.log(newCategory);
-        
-            try {
-                // Insert new category into the database
-                const result = await categoryDatabase.insertOne(newCategory);
-        
-                // Update user's cart with the new category
-                const user = await userDatabase.findOneAndUpdate(
-                    { User_email: newCategory.User_email },
-                    { $push: { cart: { categoryId: newCategory._id, category_name: newCategory.name } } }, // Assuming the category ID and name are needed in the cart
-                    { returnDocument: 'after' }
-                );
-        
-                if (!user.value) {
-                    // If user not found, return error
-                    return res.status(404).json({ error: "User not found" });
-                }
-        
-                res.json(newCategory);
-            } catch (error) {
-                return res.status(500).json({ error: "Internal Server Error" });
-            }
-        });
-        
+
+
 
         //all categories
         app.get('/categories', async (req, res) => {
@@ -165,7 +143,7 @@ async function run() {
                     { _id: new ObjectId(userId) },
                     { $push: { cart: { itemId, ...itemData } } } // Including itemId in the cart item
                 );
-                res.json({ message: "Item added to cart successfully" ,"result":result});
+                res.json({ message: "Item added to cart successfully", "result": result });
             } catch (error) {
                 res.status(500).json({ error: "Internal Server Error" });
             }
@@ -196,7 +174,7 @@ async function run() {
         app.delete('/user/:id/cart/:itemId', async (req, res) => {
             const userId = req.params.id;
             const itemId = req.params.itemId;
-            console.log(userId,itemId)
+            console.log(userId, itemId)
             try {
                 // Retrieve the user's document from the database
                 const user = await userDatabase.findOne({ _id: new ObjectId(userId) });
@@ -232,8 +210,8 @@ async function run() {
 
 
 
-        //Arts data part
-        //creater data
+        // Arts data part
+        // creater data
         app.post('/create', async (req, res) => {
             const newData = req.body;
             try {
@@ -244,6 +222,32 @@ async function run() {
                 return res.status(500).json({ "Massage": "Error data" })
             }
         })
+        // app.post('/create', async (req, res) => {
+        //     const newCategory = req.body;
+        //     console.log(newCategory);
+
+        //     try {
+        //         // Insert new category into the database
+        //         const result = await artDatabase.insertOne(newCategory);
+
+        //         // Update user's cart with the new category
+        //         const user = await userDatabase.findOneAndUpdate(
+        //             { User_email: newCategory.User_email },
+        //             { $push: { cart: { itemId: newCategory._id, item_name: newCategory.name } } }, // Assuming the category ID and name are needed in the cart
+        //             { returnDocument: 'after' }
+        //         );
+
+        //         if (!user.value) {
+        //             // If user not found, return error
+        //             return res.status(404).json({ error: "User not found" });
+        //         }
+
+        //         res.json(newCategory);
+        //     } catch (error) {
+        //         return res.status(500).json({ error: "Internal Server Error" });
+        //     }
+        //     // res.send("done")
+        // })
         //get all data
         app.get('/arts', async (req, res) => {
             try {
