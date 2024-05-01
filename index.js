@@ -55,9 +55,9 @@ async function run() {
                 return res.status(500).json({ error: "Internal Server Error" });
             }
         });
-        
-         //get one user data
-         app.get('/user/:id', async (req, res) => {
+
+        //get one user data
+        app.get('/user/:id', async (req, res) => {
             const id = req.params.id;
 
             try {
@@ -74,19 +74,19 @@ async function run() {
                 res.status(500).json({ error: "Internal Server Error" });
             }
         });
-       // get user by email
+        // get user by email
         app.get('/userByEmail/:email', async (req, res) => {
             const userEmail = req.params.email;
-        
+
             try {
                 // Retrieve user data from the database based on email
                 const userData = await userDatabase.findOne({ User_email: userEmail });
-        
+
                 if (!userData) {
                     // If user data is not found, send a 404 response
                     return res.status(404).json({ error: "User not found" });
                 }
-        
+
                 // Send the retrieved user data as the response
                 res.json(userData);
             } catch (error) {
@@ -94,8 +94,8 @@ async function run() {
                 res.status(500).json({ error: "Internal Server Error" });
             }
         });
-        
-        
+
+
         //Create category
         app.post('/createCategory', async (req, res) => {
             const newCategory = req.body;
@@ -119,43 +119,44 @@ async function run() {
                 return res.status(500).json({ error: "Internal Server Error" });
             }
         });
-        
-        
 
 
 
 
 
-        //add item in cart 
+
+
+        //add item in cart of user
+        //-------------------
         app.post('/user/:id/addItem', async (req, res) => {
             const userId = req.params.id;
+            console.log(req.body)
             const { _id: itemId, ...itemData } = req.body; // Extracting _id as itemId from the request body
-        
+
             try {
                 // Update the user's document in the database to add the item
                 const result = await userDatabase.updateOne(
                     { _id: new ObjectId(userId) },
                     { $push: { cart: { itemId, ...itemData } } } // Including itemId in the cart item
                 );
-                res.json({ message: "Item added to cart successfully" });
+                res.json({ message: "Item added to cart successfully" ,"result":result});
             } catch (error) {
                 res.status(500).json({ error: "Internal Server Error" });
             }
         });
 
-        //User Item
         //see item 
         app.get('/user/:id/cart', async (req, res) => {
             const userId = req.params.id;
-        
+
             try {
                 // Retrieve the user's document from the database
                 const user = await userDatabase.findOne({ _id: new ObjectId(userId) });
-        
+
                 if (!user) {
                     return res.status(404).json({ error: "User not found" });
                 }
-        
+
                 // Extract and return the user's cart
                 const cart = user.cart || [];
                 res.json(cart);
@@ -163,33 +164,42 @@ async function run() {
                 res.status(500).json({ error: "Internal Server Error" });
             }
         });
-        
-     
-        
-        //delete item (Is not working)
-        app.delete('/user/:userId/cart/:itemId', async (req, res) => {
-            const userId = req.params.userId;
+
+
+        // Delete item from cart
+        app.delete('/user/:id/cart/:itemId', async (req, res) => {
+            const userId = req.params.id;
             const itemId = req.params.itemId;
-            console.log(userId, itemId);
+            console.log(userId,itemId)
             try {
-                // Update the user's document in the database to remove the item from the cart
-                const result = await userDatabase.updateOne(
-                    { _id: new ObjectId(userId) },
-                    { $pull: { cart: { itemId: new ObjectId(itemId) } } }
-                );
-        
-                if (result.modifiedCount === 0) {
+                // Retrieve the user's document from the database
+                const user = await userDatabase.findOne({ _id: new ObjectId(userId) });
+
+                if (!user) {
+                    return res.status(404).json({ error: "User not found" });
+                }
+
+                // Check if the item exists in the user's cart
+                const cartIndex = user.cart.findIndex(item => item.itemId === itemId);
+                if (cartIndex === -1) {
                     return res.status(404).json({ error: "Item not found in cart" });
                 }
-        
+
+                // Remove the item from the cart
+                user.cart.splice(cartIndex, 1);
+
+                // Update the user document in the database
+                await userDatabase.updateOne({ _id: new ObjectId(userId) }, { $set: { cart: user.cart } });
+
                 res.json({ message: "Item deleted from cart successfully" });
             } catch (error) {
                 res.status(500).json({ error: "Internal Server Error" });
             }
         });
-        
-        
-        
+
+
+
+
 
 
 
