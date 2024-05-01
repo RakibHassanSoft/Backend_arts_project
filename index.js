@@ -96,18 +96,44 @@ async function run() {
         });
 
 
-        //Create category
+        //Create category and and in user cart
+        // app.post('/createCategory', async (req, res) => {
+        //     const newCategory = req.body;
+        //     console.log(newCategory)
+        //     try {
+        //         // Insert new category into the database
+        //         const result = await categoryDatabase.insertOne(newCategory);
+        //         res.json(newCategory);
+        //     } catch (error) {
+        //         return res.status(500).json({ error: "Internal Server Error" });
+        //     }
+        // });
         app.post('/createCategory', async (req, res) => {
             const newCategory = req.body;
-            console.log(newCategory)
+            console.log(newCategory);
+        
             try {
                 // Insert new category into the database
                 const result = await categoryDatabase.insertOne(newCategory);
+        
+                // Update user's cart with the new category
+                const user = await userDatabase.findOneAndUpdate(
+                    { User_email: newCategory.User_email },
+                    { $push: { cart: { categoryId: newCategory._id, category_name: newCategory.name } } }, // Assuming the category ID and name are needed in the cart
+                    { returnDocument: 'after' }
+                );
+        
+                if (!user.value) {
+                    // If user not found, return error
+                    return res.status(404).json({ error: "User not found" });
+                }
+        
                 res.json(newCategory);
             } catch (error) {
                 return res.status(500).json({ error: "Internal Server Error" });
             }
         });
+        
 
         //all categories
         app.get('/categories', async (req, res) => {
